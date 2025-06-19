@@ -1,0 +1,88 @@
+{
+  "name": "Agent Feedback Webhook",
+  "nodes": [
+    {
+      "id": "webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [100, 100],
+      "parameters": {
+        "path": "agent-feedback",
+        "options": {
+          "responseData": "responseNode"
+        },
+        "authentication": "basicAuth",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "validate_payload",
+      "type": "n8n-nodes-base.function",
+      "position": [300, 100],
+      "parameters": {
+        "functionCode": "// Validate required fields\nconst payload = items[0].json.body;\nif (!payload.agent_id || !payload.error_type || !payload.message) {\n  throw new Error('Missing required fields');\n}\n\n// Add timestamp\nconst error = {\n  timestamp: new Date().toISOString(),\n  agent_id: payload.agent_id,\n  error_type: payload.error_type,\n  message: payload.message,\n  context: payload.context || {}\n};\n\nreturn {json: error};"
+      }
+    },
+    {
+      "id": "execute_python",
+      "type": "n8n-nodes-base.executeCommand",
+      "position": [500, 100],
+      "parameters": {
+        "command": "python3 scripts/github_feedback_logger.py",
+        "arguments": "='{{$json}}'",
+        "executeTimeout": 20
+      }
+    },
+    {
+      "id": "response",
+      "type": "n8n-nodes-base.respond",
+      "position": [700, 100],
+      "parameters": {
+        "options": {
+          "responseBody": "={\"status\": \"success\", \"message\": \"Error logged successfully\"}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "webhook": {
+      "main": [
+        [
+          {
+            "node": "validate_payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validate_payload": {
+      "main": [
+        [
+          {
+            "node": "execute_python",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "execute_python": {
+      "main": [
+        [
+          {
+            "node": "response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "errorWorkflow": "none",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "version": 1
+}

@@ -1,0 +1,14 @@
+{
+  "agent_id": "B5",
+  "error_type": "validation_error",
+  "message": "Missing required field: vendor_id",
+  "context": {
+    "workflow_id": "bookkeeping_entry_B5",
+    "input_data": {
+      "date": "2025-06-11",
+      "amount": "2500.00",
+      "description": "Office supplies purchase"
+    },
+    "error_location": "vendor_validation_step"
+  }
+}
